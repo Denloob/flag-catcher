@@ -5,10 +5,9 @@ project(discord-bot VERSION 1.0 DESCRIPTION "A discord bot")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-# Create an executable
-add_executable(${PROJECT_NAME}
-    src/main.cpp
-)
+file(GLOB SOURCES "src/*.cpp")
+
+add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Find our pre-installed DPP package (using FindDPP.cmake).
 find_package(DPP REQUIRED)
