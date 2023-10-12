@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # Project name, version and description
 project(discord-bot VERSION 1.0 DESCRIPTION "A discord bot")
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake /usr/lib/cmake/vtk)
 
 file(GLOB SOURCES "src/*.cpp")
 
@@ -12,14 +12,32 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 # Find our pre-installed DPP package (using FindDPP.cmake).
 find_package(DPP REQUIRED)
 
-# Link the pre-installed DPP package.
+# Find libCURL package
+find_package(CURL REQUIRED)
+
+# Find JsonCpp package
+find_package(JsonCpp REQUIRED)
+
+# Link the libraries
 target_link_libraries(${PROJECT_NAME}
     ${DPP_LIBRARIES}
+    ${JsonCpp_LIBRARIES}
+    ${CURL_LIBRARIES}
 )
 
 # Include the DPP directories.
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${DPP_INCLUDE_DIR}
+)
+
+# Include libCURL headers
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CURL_INCLUDE_DIR}
+)
+
+# Include JsonCpp headers
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${JsonCpp_INCLUDE_DIRS}
 )
 
 # compile_commands.json
