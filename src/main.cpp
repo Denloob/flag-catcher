@@ -1,5 +1,6 @@
+#include "ctf.h"
+#include "ctf.hpp"
 #include "dpp/dpp.h"
-#include <cstdlib>
 #include <string_view>
 
 std::string get_bot_token()
@@ -13,6 +14,17 @@ std::string get_bot_token()
     return token;
 }
 
+namespace slash_command
+{
+void create(const dpp::slashcommand_t &event)
+{
+    auto id = std::get<std::int64_t>(event.get_parameter("id"));
+    CTF ctf{id};
+
+    event.reply(ctf.to_text());
+}
+} // namespace slash_command
+
 int main(int argc, char **argv)
 {
     dpp::cluster bot(get_bot_token());
@@ -22,19 +34,30 @@ int main(int argc, char **argv)
     bot.on_slashcommand(
         [](const dpp::slashcommand_t &event)
         {
-            if (event.command.get_command_name() == "ping")
-            {
-                event.reply("Pong!");
-            }
+            if (event.command.get_command_name() == "create")
+                slash_command::create(event);
         });
 
+    bool recreate_commands{};
+    for (int i = 1; i < argc; i++)
+    {
+        if (std::string_view{argv[i]} == "--recreate-commands")
+            recreate_commands = true;
+    }
+
     bot.on_ready(
-        [&bot](const dpp::ready_t &)
+        [&bot, recreate_commands](const dpp::ready_t &)
         {
-            if (dpp::run_once<struct register_bot_commands>())
+            if (dpp::run_once<struct register_bot_commands>() &&
+                recreate_commands)
             {
-                bot.global_command_create(
-                    dpp::slashcommand("ping", "Ping pong!", bot.me.id));
+                bot.global_bulk_command_create({
+                    dpp::slashcommand("create", "Creates a CTF event",
+                                      bot.me.id)
+                        .add_option(dpp::command_option(
+                            dpp::co_integer, "id",
+                            "ID of the CTF on ctftime.org", true)),
+                });
             }
         });
 
