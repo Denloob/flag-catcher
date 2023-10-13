@@ -11,6 +11,8 @@ struct CTF
     std::time_t start{};
     std::time_t finish{};
     std::string title{};
+    std::string url{};
+    std::string ctftime_url{};
 
     explicit CTF(std::int64_t id);
 

@@ -101,6 +101,8 @@ CTF::CTF(std::int64_t id) : id{id}
     start = string_date_to_timestamp(root["start"].asString());
     finish = string_date_to_timestamp(root["finish"].asString());
     title = root["title"].asString();
+    url = root["url"].asString();
+    ctftime_url = root["ctftime_url"].asString();
 }
 
 std::int64_t CTF::get_duration_seconds() const
@@ -171,7 +173,11 @@ std::string CTF::to_text() const
 
     std::stringstream stream;
 
-    stream << title << "\n\n";
+    stream << "# " << title << '\n'
+           << "CTFtime: <" << ctftime_url << ">\n"
+           << "Website: <" << url << ">\n\n";
+
+    stream << "Status: ";
 
     std::int64_t current_time = std::time(nullptr);
 
