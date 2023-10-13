@@ -14,17 +14,12 @@ constexpr std::string_view api_url{"https://ctftime.org/api/v1/events/"};
 std::int64_t string_date_to_timestamp(const std::string &date)
 {
     std::tm tm{};
-    if (!strptime(date.c_str(), "%Y-%m-%dT%H:%M:%S%z", &tm))
+    if (!strptime(date.c_str(), "%FT%T%z", &tm))
         return 0;
 
-    auto time = std::mktime(&tm);
-    std::chrono::system_clock::time_point time_point =
-        std::chrono::system_clock::from_time_t(time);
+    auto timestamp = std::mktime(&tm);
 
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(
-        time_point.time_since_epoch());
-
-    return duration.count();
+    return timestamp;
 }
 
 bool parse_json_endpoint(const std::string &endpoint, Json::Value *json,
