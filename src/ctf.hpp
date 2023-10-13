@@ -21,6 +21,8 @@ struct CTF
 
     std::string to_text() const;
     dpp::embed to_embed() const;
+
+    std::string to_google_event() const;
 };
 
 struct CTFCreationException : public std::runtime_error

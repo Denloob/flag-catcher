@@ -233,6 +233,35 @@ std::string CTF::to_text() const
     return stream.str();
 }
 
+std::string to_google_timestamp(std::time_t gmt_timestamp)
+{
+    std::tm tm;
+    gmtime_r(&gmt_timestamp, &tm);
+
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%Y%m%dT%H%M%SZ");
+
+    return oss.str();
+}
+
+std::string CTF::to_google_event() const
+{
+    constexpr const char *slash{"%2F"};
+
+    char *title_escaped{curl_easy_escape(nullptr, title.c_str(), 0)};
+
+    std::string google_event_url =
+        "http://www.google.com/calendar/event?action=TEMPLATE&text=";
+    google_event_url += title_escaped;
+
+    curl_free(title_escaped);
+
+    google_event_url += "&dates=" + to_google_timestamp(start) + slash +
+                        to_google_timestamp(finish);
+
+    return google_event_url;
+}
+
 dpp::embed CTF::to_embed() const
 {
     dpp::embed embed = dpp::embed()
@@ -265,7 +294,9 @@ dpp::embed CTF::to_embed() const
     }
 
     constexpr std::uint32_t electric_blue{0x2196F3};
-    embed.add_field("Time", timestamp::long_date_and_relative(start))
+    embed
+        .add_field("Time", timestamp::long_date_and_relative(start) +
+                               " [[+]](" + to_google_event() + ")")
         .add_field("Duration",
                    seconds_to_human_string(this->get_duration_seconds()))
         .set_color(electric_blue);
