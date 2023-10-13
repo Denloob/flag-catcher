@@ -19,9 +19,19 @@ namespace slash_command
 void create(const dpp::slashcommand_t &event)
 {
     auto id = std::get<std::int64_t>(event.get_parameter("id"));
-    CTF ctf{id};
+    try
+    {
+        CTF ctf{id};
 
-    event.reply(ctf.to_text());
+        event.reply(ctf.to_text());
+    }
+    catch (CTFCreationException &e)
+    {
+        event.reply(
+            dpp::message("Error occurred while creating a CTF with ID = '" +
+                         std::to_string(id) + "'\n" + e.what())
+                .set_flags(dpp::m_ephemeral));
+    }
 }
 } // namespace slash_command
 

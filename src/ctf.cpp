@@ -52,7 +52,31 @@ bool parse_json_endpoint(const std::string &endpoint, Json::Value *json,
     curl_easy_cleanup(curl);
 
     if (res != CURLE_OK)
+    {
+        *errors = std::string{"cURL request error: "} + curl_easy_strerror(res);
         return false;
+    }
+
+    long http_code{};
+    res = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    if (res != CURLE_OK)
+    {
+        *errors = std::string{"cURL getinfo error: "} + curl_easy_strerror(res);
+        return false;
+    }
+
+    if (http_code == 404)
+    {
+        *errors = "404: CTF Not Found.";
+        return false;
+    }
+
+    if (http_code != 200)
+    {
+        *errors = "Couldn't get CTF information. HTTP code " +
+                  std::to_string(http_code) + '.';
+        return false;
+    }
 
     Json::CharReaderBuilder builder;
     Json::CharReader *reader{builder.newCharReader()};
@@ -69,9 +93,10 @@ CTF::CTF(std::int64_t id) : id{id}
     endpoint += std::to_string(id);
     endpoint += '/';
 
+    std::string errors;
     Json::Value root;
-    if (!parse_json_endpoint(endpoint, &root))
-        return;
+    if (!parse_json_endpoint(endpoint, &root, &errors))
+        throw CTFCreationException(errors);
 
     start = string_date_to_timestamp(root["start"].asString());
     finish = string_date_to_timestamp(root["finish"].asString());
@@ -185,4 +210,9 @@ std::string CTF::to_text() const
            << dpp::utility::timestamp(finish, time_format::tf_long_datetime);
 
     return stream.str();
+}
+
+CTFCreationException::CTFCreationException(const std::string &message)
+    : std::runtime_error{message}
+{
 }

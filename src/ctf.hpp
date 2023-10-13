@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <ctime>
+#include <stdexcept>
 #include <string>
 
 struct CTF
@@ -16,4 +17,9 @@ struct CTF
     std::int64_t get_duration_seconds() const;
 
     std::string to_text() const;
+};
+
+struct CTFCreationException : public std::runtime_error
+{
+    explicit CTFCreationException(const std::string &message);
 };
