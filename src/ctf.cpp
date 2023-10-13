@@ -45,16 +45,19 @@ bool parse_json_endpoint(const std::string &endpoint, Json::Value *json,
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
 
     CURLcode res{curl_easy_perform(curl)};
-    curl_easy_cleanup(curl);
-
     if (res != CURLE_OK)
     {
+        curl_easy_cleanup(curl);
+
         *errors = std::string{"cURL request error: "} + curl_easy_strerror(res);
         return false;
     }
 
     long http_code{};
     res = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+    curl_easy_cleanup(curl);
+
     if (res != CURLE_OK)
     {
         *errors = std::string{"cURL getinfo error: "} + curl_easy_strerror(res);
