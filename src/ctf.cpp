@@ -75,7 +75,7 @@ bool parse_json_endpoint(const std::string &endpoint, Json::Value *json,
     }
 
     Json::CharReaderBuilder builder;
-    Json::CharReader *reader{builder.newCharReader()};
+    std::unique_ptr<Json::CharReader> reader{builder.newCharReader()};
 
     return reader->parse(responseData.c_str(),
                          responseData.c_str() + responseData.size(), json,
