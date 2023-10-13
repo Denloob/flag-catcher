@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <ctime>
+#include <dpp/message.h>
 #include <stdexcept>
 #include <string>
 
@@ -19,6 +20,7 @@ struct CTF
     std::int64_t get_duration_seconds() const;
 
     std::string to_text() const;
+    dpp::embed to_embed() const;
 };
 
 struct CTFCreationException : public std::runtime_error

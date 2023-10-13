@@ -1,7 +1,8 @@
 #include "ctf.hpp"
-#include "dpp/utility.h"
+#include "dpp/dpp.h"
 #include <chrono>
 #include <cstdint>
+#include <ctime>
 #include <curl/curl.h>
 #include <json/json.h>
 #include <sstream>
@@ -167,6 +168,25 @@ std::string seconds_to_human_string(std::int64_t duration)
     return stream.str();
 }
 
+namespace timestamp
+{
+using dpp::utility::time_format;
+using dpp::utility::timestamp;
+
+std::string short_date_and_time(std::time_t ts)
+{
+
+    return timestamp(ts, time_format::tf_short_date) +
+           timestamp(ts, time_format::tf_short_time);
+}
+
+std::string long_date_and_relative(std::time_t ts)
+{
+    return timestamp(ts, time_format::tf_long_datetime) + " (" +
+           timestamp(ts, time_format::tf_relative_time) + ')';
+}
+} // namespace timestamp
+
 std::string CTF::to_text() const
 {
     using dpp::utility::time_format;
@@ -216,6 +236,46 @@ std::string CTF::to_text() const
            << dpp::utility::timestamp(finish, time_format::tf_long_datetime);
 
     return stream.str();
+}
+
+dpp::embed CTF::to_embed() const
+{
+    dpp::embed embed = dpp::embed()
+                           .set_title(u8"🚩 " + title)
+                           .set_description("CTFtime: <" + ctftime_url + ">\n" +
+                                            "Website: <" + url + ">");
+
+    std::int64_t current_time = std::time(nullptr);
+    using dpp::utility::time_format;
+    using dpp::utility::timestamp;
+
+    if (current_time > finish)
+    {
+        embed.add_field("Status", "Over", true)
+            .add_field("Date", timestamp::short_date_and_time(start) + " - " +
+                                   timestamp::short_date_and_time(finish))
+            .set_color(dpp::colors::dark_gray);
+
+        return embed;
+    }
+
+    if (current_time > start)
+    {
+        constexpr std::uint32_t soft_teal{0x4CAF50};
+        embed.add_field("Status", "Live!", true)
+            .add_field("End", timestamp::long_date_and_relative(finish))
+            .set_color(soft_teal);
+
+        return embed;
+    }
+
+    constexpr std::uint32_t electric_blue{0x2196F3};
+    embed.add_field("Time", timestamp::long_date_and_relative(start))
+        .add_field("Duration",
+                   seconds_to_human_string(this->get_duration_seconds()))
+        .set_color(electric_blue);
+
+    return embed;
 }
 
 CTFCreationException::CTFCreationException(const std::string &message)

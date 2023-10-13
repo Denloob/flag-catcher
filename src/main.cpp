@@ -23,7 +23,8 @@ void create(const dpp::slashcommand_t &event)
     {
         CTF ctf{id};
 
-        event.reply(ctf.to_text());
+        event.reply(dpp::message(event.command.channel_id,
+                                 ctf.to_embed()));
     }
     catch (CTFCreationException &e)
     {
