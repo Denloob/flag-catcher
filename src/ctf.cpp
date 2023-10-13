@@ -17,7 +17,7 @@ std::int64_t string_date_to_timestamp(const std::string &date)
     if (!strptime(date.c_str(), "%FT%T%z", &tm))
         return 0;
 
-    auto timestamp = std::mktime(&tm);
+    auto timestamp = std::mktime(&tm) - timezone;
 
     return timestamp;
 }
