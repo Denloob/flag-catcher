@@ -40,7 +40,7 @@ void create(const dpp::slashcommand_t &event)
 {
     auto id = std::get<std::int64_t>(event.get_parameter("id"));
 
-    Team team{
+    CTF::Team team{
         .name = to_optional_from_event<std::string>(event, "team-name"),
         .password = to_optional_from_event<std::string>(event, "team-password"),
         .url = to_optional_from_event<std::string>(event, "team-link"),
@@ -50,11 +50,11 @@ void create(const dpp::slashcommand_t &event)
 
     try
     {
-        CTF ctf{id, team};
+        CTF::CTF ctf{id, team};
 
         event.reply(dpp::message(event.command.channel_id, ctf.to_embed()));
     }
-    catch (CTFCreationException &e)
+    catch (CTF::CreationException &e)
     {
         event.reply(
             dpp::message("Error occurred while creating a CTF with ID = '" +

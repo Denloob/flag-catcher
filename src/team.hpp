@@ -3,6 +3,8 @@
 #include <optional>
 #include <string>
 
+namespace CTF
+{
 struct Team
 {
     std::optional<std::string> name{};
@@ -12,3 +14,4 @@ struct Team
 
     std::string to_string() const;
 };
+} // namespace CTF

@@ -1,6 +1,6 @@
 #include "team.hpp"
 
-std::string Team::to_string() const
+std::string CTF::Team::to_string() const
 {
     std::string s;
 

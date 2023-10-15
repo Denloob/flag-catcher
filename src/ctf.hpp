@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <string>
 
+namespace CTF
+{
 struct CTF
 {
     std::int64_t id{};
@@ -27,7 +29,8 @@ struct CTF
     std::string to_google_event() const;
 };
 
-struct CTFCreationException : public std::runtime_error
+struct CreationException : public std::runtime_error
 {
-    explicit CTFCreationException(const std::string &message);
+    explicit CreationException(const std::string &message);
 };
+} // namespace CTF

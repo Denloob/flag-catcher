@@ -85,7 +85,7 @@ bool parse_json_endpoint(const std::string &endpoint, Json::Value *json,
                          errors);
 }
 
-CTF::CTF(std::int64_t id, const Team &team) : id{id}, team{team}
+CTF::CTF::CTF(std::int64_t id, const Team &team) : id{id}, team{team}
 {
 
     std::string endpoint{api_url};
@@ -95,7 +95,7 @@ CTF::CTF(std::int64_t id, const Team &team) : id{id}, team{team}
     std::string errors;
     Json::Value root;
     if (!parse_json_endpoint(endpoint, &root, &errors))
-        throw CTFCreationException(errors);
+        throw CreationException(errors);
 
     start = string_date_to_timestamp(root["start"].asString());
     finish = string_date_to_timestamp(root["finish"].asString());
@@ -104,7 +104,7 @@ CTF::CTF(std::int64_t id, const Team &team) : id{id}, team{team}
     ctftime_url = root["ctftime_url"].asString();
 }
 
-std::int64_t CTF::get_duration_seconds() const
+std::int64_t CTF::CTF::get_duration_seconds() const
 {
     return finish - start;
 }
@@ -185,7 +185,7 @@ std::string long_date_and_relative(std::time_t ts)
 }
 } // namespace timestamp
 
-std::string CTF::to_text() const
+std::string CTF::CTF::to_text() const
 {
     using dpp::utility::time_format;
 
@@ -250,7 +250,7 @@ std::string to_google_timestamp(std::time_t gmt_timestamp)
     return oss.str();
 }
 
-std::string CTF::to_google_event() const
+std::string CTF::CTF::to_google_event() const
 {
     constexpr const char *slash{"%2F"};
 
@@ -268,7 +268,7 @@ std::string CTF::to_google_event() const
     return google_event_url;
 }
 
-dpp::embed CTF::to_embed() const
+dpp::embed CTF::CTF::to_embed() const
 {
     dpp::embed embed = dpp::embed()
                            .set_title(u8"🚩 " + title)
@@ -313,7 +313,7 @@ dpp::embed CTF::to_embed() const
     return embed;
 }
 
-CTFCreationException::CTFCreationException(const std::string &message)
+CTF::CreationException::CreationException(const std::string &message)
     : std::runtime_error{message}
 {
 }
