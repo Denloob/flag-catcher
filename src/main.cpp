@@ -14,17 +14,45 @@ std::string get_bot_token()
     return token;
 }
 
+template <typename T, typename... Types>
+std::optional<T> to_optional(const std::variant<Types...> &variant)
+{
+    if (std::holds_alternative<T>(variant))
+    {
+        return std::get<T>(variant);
+    }
+    else
+    {
+        return std::nullopt;
+    }
+}
+
+template <typename T>
+std::optional<T> to_optional_from_event(const dpp::slashcommand_t &event,
+                                        const std::string &parameter_name)
+{
+    return to_optional<T>(event.get_parameter(parameter_name));
+}
+
 namespace slash_command
 {
 void create(const dpp::slashcommand_t &event)
 {
     auto id = std::get<std::int64_t>(event.get_parameter("id"));
+
+    Team team{
+        .name = to_optional_from_event<std::string>(event, "team-name"),
+        .password = to_optional_from_event<std::string>(event, "team-password"),
+        .url = to_optional_from_event<std::string>(event, "team-link"),
+        .other_info =
+            to_optional_from_event<std::string>(event, "team-other-info"),
+    };
+
     try
     {
-        CTF ctf{id};
+        CTF ctf{id, team};
 
-        event.reply(dpp::message(event.command.channel_id,
-                                 ctf.to_embed()));
+        event.reply(dpp::message(event.command.channel_id, ctf.to_embed()));
     }
     catch (CTFCreationException &e)
     {
@@ -67,7 +95,22 @@ int main(int argc, char **argv)
                                       bot.me.id)
                         .add_option(dpp::command_option(
                             dpp::co_integer, "id",
-                            "ID of the CTF on ctftime.org", true)),
+                            "ID of the CTF on ctftime.org", true))
+                        .add_option(
+                            dpp::command_option(dpp::co_string, "team-name",
+                                                "The name of your team."))
+                        .add_option(dpp::command_option(
+                            dpp::co_string, "team-password",
+                            "The password required to join your "
+                            "team."))
+                        .add_option(dpp::command_option(dpp::co_string,
+                                                        "team-link",
+                                                        "The link one can use "
+                                                        "to join your team."))
+                        .add_option(dpp::command_option(
+                            dpp::co_string, "team-other-info",
+                            "Any information related to joining your "
+                            "team.")),
                 });
             }
         });

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "team.hpp"
 #include <cstdint>
 #include <ctime>
 #include <dpp/message.h>
@@ -14,8 +15,9 @@ struct CTF
     std::string title{};
     std::string url{};
     std::string ctftime_url{};
+    Team team{};
 
-    explicit CTF(std::int64_t id);
+    CTF(std::int64_t id, const Team &team = {});
 
     std::int64_t get_duration_seconds() const;
 

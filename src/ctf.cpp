@@ -85,7 +85,7 @@ bool parse_json_endpoint(const std::string &endpoint, Json::Value *json,
                          errors);
 }
 
-CTF::CTF(std::int64_t id) : id{id}
+CTF::CTF(std::int64_t id, const Team &team) : id{id}, team{team}
 {
 
     std::string endpoint{api_url};
@@ -195,6 +195,9 @@ std::string CTF::to_text() const
            << "CTFtime: <" << ctftime_url << ">\n"
            << "Website: <" << url << ">\n\n";
 
+    if (std::string team_info{team.to_string()}; !team_info.empty())
+        stream << "## Team\n" << team_info;
+
     stream << "Status: ";
 
     std::int64_t current_time = std::time(nullptr);
@@ -271,6 +274,9 @@ dpp::embed CTF::to_embed() const
                            .set_title(u8"🚩 " + title)
                            .set_description("CTFtime: <" + ctftime_url + ">\n" +
                                             "Website: <" + url + ">");
+
+    if (std::string team_info{team.to_string()}; !team_info.empty())
+        embed.add_field("Team", team_info);
 
     std::int64_t current_time = std::time(nullptr);
     using dpp::utility::time_format;
