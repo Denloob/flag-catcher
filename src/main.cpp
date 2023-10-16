@@ -1,6 +1,11 @@
+#include "SQLiteCpp/SQLiteCpp.h"
 #include "ctf.hpp"
+#include "db.hpp"
 #include "dpp/dpp.h"
 #include <string_view>
+
+constexpr std::string_view database_file_name{"ctfs.db3"};
+constexpr auto update_interval_sec{1};
 
 std::string get_bot_token()
 {
@@ -35,7 +40,7 @@ std::optional<T> to_optional_from_event(const dpp::slashcommand_t &event,
 
 namespace slash_command
 {
-void create(const dpp::slashcommand_t &event)
+void create(const dpp::slashcommand_t &event, const CTF::DB &db)
 {
     auto id = std::get<std::int64_t>(event.get_parameter("id"));
 
@@ -52,6 +57,18 @@ void create(const dpp::slashcommand_t &event)
         CTF::CTF ctf{id, team};
 
         event.reply(dpp::message(event.command.channel_id, ctf.to_embed()));
+
+        if (std::time(nullptr) >= ctf.finish)
+            return;
+
+        event.get_original_response(
+            [&db,
+             ctf](const dpp::confirmation_callback_t &confirmation_callback)
+            {
+                const auto &message{confirmation_callback.get<dpp::message>()};
+
+                db.insert_ctf(ctf, message.id, message.channel_id);
+            });
     }
     catch (CTF::CreationException &e)
     {
@@ -65,15 +82,17 @@ void create(const dpp::slashcommand_t &event)
 
 int main(int argc, char **argv)
 {
+    CTF::DB db{database_file_name};
+
     dpp::cluster bot(get_bot_token());
 
     bot.on_log(dpp::utility::cout_logger());
 
     bot.on_slashcommand(
-        [](const dpp::slashcommand_t &event)
+        [&db](const dpp::slashcommand_t &event)
         {
             if (event.command.get_command_name() == "create")
-                slash_command::create(event);
+                slash_command::create(event, db);
         });
 
     bool recreate_commands{};
@@ -113,6 +132,21 @@ int main(int argc, char **argv)
                 });
             }
         });
+
+    bot.start_timer(
+        [&bot, &db](dpp::timer)
+        {
+            const dpp::shard_list &shards = bot.get_shards();
+            for (auto [_, shard] : shards)
+            {
+                if (!shard->is_connected())
+                    return;
+            }
+
+            db.update_ctfs(bot);
+            db.cleanup_ctfs(bot);
+        },
+        update_interval_sec);
 
     bot.start(dpp::st_wait);
 }
