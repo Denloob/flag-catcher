@@ -18,11 +18,17 @@ find_package(CURL REQUIRED)
 # Find JsonCpp package
 find_package(JsonCpp REQUIRED)
 
+# Add SQLiteCpp
+set(SQLITECPP_RUN_CPPCHECK OFF CACHE BOOL "" FORCE)
+set(SQLITECPP_RUN_CPPLINT OFF CACHE BOOL "" FORCE)
+add_subdirectory(SQLiteCpp)
+
 # Link the libraries
 target_link_libraries(${PROJECT_NAME}
     ${DPP_LIBRARIES}
     ${JsonCpp_LIBRARIES}
     ${CURL_LIBRARIES}
+    SQLiteCpp
 )
 
 # Include the DPP directories.
