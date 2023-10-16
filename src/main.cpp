@@ -1,4 +1,3 @@
-#include "ctf.h"
 #include "ctf.hpp"
 #include "dpp/dpp.h"
 #include <string_view>
