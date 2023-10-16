@@ -26,6 +26,7 @@ struct CTF
         over,
     };
 
+    CTF() = default;
     CTF(std::int64_t id, const Team &team = {});
 
     std::int64_t get_duration_seconds() const;
