@@ -19,6 +19,13 @@ struct CTF
     std::string ctftime_url{};
     Team team{};
 
+    enum class Status
+    {
+        soon,
+        live,
+        over,
+    };
+
     CTF(std::int64_t id, const Team &team = {});
 
     std::int64_t get_duration_seconds() const;
@@ -27,6 +34,8 @@ struct CTF
     dpp::embed to_embed() const;
 
     std::string to_google_event() const;
+
+    Status get_status() const;
 };
 
 struct CreationException : public std::runtime_error

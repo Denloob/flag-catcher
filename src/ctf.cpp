@@ -200,43 +200,52 @@ std::string CTF::CTF::to_text() const
 
     stream << "Status: ";
 
-    std::int64_t current_time = std::time(nullptr);
-
-    if (current_time > finish)
+    switch (this->get_status())
     {
-        stream << "Over. Ended "
-               << dpp::utility::timestamp(finish, time_format::tf_relative_time)
-               << '('
-               << dpp::utility::timestamp(start, time_format::tf_short_date)
-               << " - "
-               << dpp::utility::timestamp(finish, time_format::tf_short_date)
-               << ")\n";
+        case CTF::Status::over:
+            stream << "Over. Ended "
+                   << dpp::utility::timestamp(finish,
+                                              time_format::tf_relative_time)
+                   << '('
+                   << dpp::utility::timestamp(start, time_format::tf_short_date)
+                   << " - "
+                   << dpp::utility::timestamp(finish,
+                                              time_format::tf_short_date)
+                   << ")\n";
 
-        return stream.str();
+            return stream.str();
+
+        case CTF::Status::live:
+            stream << "Live! Ends in "
+                   << dpp::utility::timestamp(finish,
+                                              time_format::tf_relative_time)
+                   << " ("
+                   << dpp::utility::timestamp(finish,
+                                              time_format::tf_long_datetime)
+                   << ")\n";
+
+            return stream.str();
+
+        case CTF::Status::soon:
+            stream << "Starts in "
+                   << dpp::utility::timestamp(start,
+                                              time_format::tf_relative_time)
+                   << " ("
+                   << dpp::utility::timestamp(start,
+                                              time_format::tf_long_datetime)
+                   << ")\n"
+                   << "Will last `"
+                   << seconds_to_human_string(this->get_duration_seconds())
+                   << "`.\n"
+                   << "Ends on "
+                   << dpp::utility::timestamp(finish,
+                                              time_format::tf_long_datetime);
+
+            return stream.str();
+
+        default:
+            throw std::logic_error{"Unknown CTF status."};
     }
-
-    if (current_time > start)
-    {
-        stream << "🔴 Live! Ends in "
-               << dpp::utility::timestamp(finish, time_format::tf_relative_time)
-               << " ("
-               << dpp::utility::timestamp(finish, time_format::tf_long_datetime)
-               << ")\n";
-
-        return stream.str();
-    }
-
-    stream << "Starts in "
-           << dpp::utility::timestamp(start, time_format::tf_relative_time)
-           << " ("
-           << dpp::utility::timestamp(start, time_format::tf_long_datetime)
-           << ")\n"
-           << "Will last `"
-           << seconds_to_human_string(this->get_duration_seconds()) << "`.\n"
-           << "Ends on "
-           << dpp::utility::timestamp(finish, time_format::tf_long_datetime);
-
-    return stream.str();
 }
 
 std::string to_google_timestamp(std::time_t gmt_timestamp)
@@ -278,39 +287,58 @@ dpp::embed CTF::CTF::to_embed() const
     if (std::string team_info{team.to_string()}; !team_info.empty())
         embed.add_field("Team", team_info);
 
-    std::int64_t current_time = std::time(nullptr);
     using dpp::utility::time_format;
     using dpp::utility::timestamp;
 
-    if (current_time > finish)
-    {
-        embed.add_field("Status", "Over", true)
-            .add_field("Date", timestamp::short_date_and_time(start) + " - " +
-                                   timestamp::short_date_and_time(finish))
-            .set_color(dpp::colors::dark_gray);
+    constexpr std::uint32_t soft_teal{0x4CAF50};
+    constexpr std::uint32_t electric_blue{0x2196F3};
 
-        return embed;
+    switch (this->get_status())
+    {
+        case CTF::Status::over:
+            embed.add_field("Status", "Over", true)
+                .add_field("Date", timestamp::short_date_and_time(start) +
+                                       " - " +
+                                       timestamp::short_date_and_time(finish))
+                .set_color(dpp::colors::dark_gray);
+
+            return embed;
+
+        case CTF::Status::live:
+            embed.add_field("Status", "Live!", true)
+                .add_field("End", timestamp::long_date_and_relative(finish))
+                .set_color(soft_teal);
+
+            return embed;
+
+        case CTF::Status::soon:
+            embed
+                .add_field("Time", timestamp::long_date_and_relative(start) +
+                                       " [[+]](" + to_google_event() + ")")
+                .add_field("Duration", seconds_to_human_string(
+                                           this->get_duration_seconds()))
+                .set_color(electric_blue);
+
+            return embed;
+
+        default:
+            throw std::logic_error{"Unknown CTF status."};
     }
+}
+
+CTF::CTF::Status CTF::CTF::get_status() const
+{
+    using Status = CTF::Status;
+
+    std::int64_t current_time = std::time(nullptr);
+
+    if (current_time > finish)
+        return Status::over;
 
     if (current_time > start)
-    {
-        constexpr std::uint32_t soft_teal{0x4CAF50};
-        embed.add_field("Status", "Live!", true)
-            .add_field("End", timestamp::long_date_and_relative(finish))
-            .set_color(soft_teal);
+        return Status::live;
 
-        return embed;
-    }
-
-    constexpr std::uint32_t electric_blue{0x2196F3};
-    embed
-        .add_field("Time", timestamp::long_date_and_relative(start) +
-                               " [[+]](" + to_google_event() + ")")
-        .add_field("Duration",
-                   seconds_to_human_string(this->get_duration_seconds()))
-        .set_color(electric_blue);
-
-    return embed;
+    return Status::soon;
 }
 
 CTF::CreationException::CreationException(const std::string &message)
