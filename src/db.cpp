@@ -125,17 +125,35 @@ void DB::remove_deleted_ctfs(dpp::cluster &bot) const
 void update_ctf(dpp::cluster &bot, std::int64_t id, std::int64_t channel_id,
                 const CTF &ctf)
 {
-    bot.message_get(id, channel_id,
-                    [ctf, &bot](const dpp::confirmation_callback_t &cc)
-                    {
-                        if (cc.is_error())
-                            return;
+    bot.message_get(
+        id, channel_id,
+        [ctf, &bot](const dpp::confirmation_callback_t &cc)
+        {
+            if (cc.is_error())
+                return;
 
-                        auto message = cc.get<dpp::message>();
-                        message.embeds = {ctf.to_embed()};
+            auto ctf_embed = ctf.to_embed();
 
-                        bot.message_edit(message);
-                    });
+            auto message = cc.get<dpp::message>();
+            message.embeds = {ctf_embed};
+
+            bot.message_edit(message);
+
+            constexpr std::string_view message_link_prefix{
+                "https://discord.com/channels/"};
+            auto message_link{
+                std::string{message_link_prefix} + message.guild_id.str() +
+                '/' + message.channel_id.str() + '/' + message.id.str()};
+
+            auto notification_embed =
+                dpp::embed()
+                    .set_title("**" + ctf.title + "** is starting now!")
+                    .set_description("[**Event Details**](" + message_link +
+                                     ')')
+                    .set_color(ctf_embed.color);
+            bot.message_create(
+                dpp::message(message.channel_id, notification_embed));
+        });
 }
 
 /**
