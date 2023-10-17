@@ -85,7 +85,10 @@ bool parse_json_endpoint(const std::string &endpoint, Json::Value *json,
                          errors);
 }
 
-CTF::CTF::CTF(std::int64_t id, const Team &team) : id{id}, team{team}
+CTF::CTF::CTF(std::int64_t id,
+              const std::optional<dpp::snowflake> &participaiting_role,
+              const Team &team)
+    : id{id}, participaiting_role{participaiting_role}, team{team}
 {
 
     std::string endpoint{api_url};

@@ -54,7 +54,9 @@ void create(const dpp::slashcommand_t &event, const CTF::DB &db)
 
     try
     {
-        CTF::CTF ctf{id, team};
+        auto participaiting_role =
+            to_optional_from_event<dpp::snowflake>(event, "ping-on-start");
+        CTF::CTF ctf{id, participaiting_role, team};
 
         event.reply(dpp::message(event.command.channel_id, ctf.to_embed()));
 
@@ -128,7 +130,10 @@ int main(int argc, char **argv)
                         .add_option(dpp::command_option(
                             dpp::co_string, "team-other-info",
                             "Any information related to joining your "
-                            "team.")),
+                            "team."))
+                        .add_option(dpp::command_option(
+                            dpp::co_role, "ping-on-start",
+                            "Role to ping when the CTF starts.")),
                 });
             }
         });

@@ -17,6 +17,7 @@ struct CTF
     std::string title{};
     std::string url{};
     std::string ctftime_url{};
+    std::optional<dpp::snowflake> participaiting_role{};
     Team team{};
 
     enum class Status
@@ -27,7 +28,9 @@ struct CTF
     };
 
     CTF() = default;
-    CTF(std::int64_t id, const Team &team = {});
+    CTF(std::int64_t id,
+        const std::optional<dpp::snowflake> &participaiting_role = {},
+        const Team &team = {});
 
     std::int64_t get_duration_seconds() const;
 

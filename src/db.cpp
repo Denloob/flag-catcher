@@ -22,7 +22,8 @@ DB::DB(std::string_view file_name)
                                       "team_name TEXT NULL,"
                                       "team_password TEXT NULL,"
                                       "team_link TEXT NULL,"
-                                      "team_other_info TEXT NULL"
+                                      "team_other_info TEXT NULL,"
+                                      "participaiting_role INTEGER NULL"
                                       ")");
     query.exec();
 }
@@ -35,9 +36,10 @@ void DB::insert_ctf(const CTF &ctf, dpp::snowflake message_id,
         "INSERT INTO ctf_data (id, channel_id, ctf_id, status, start, "
         "finish, "
         "title, url, ctftime_url, "
-        "team_name, team_password, team_link, team_other_info) "
+        "team_name, team_password, team_link, team_other_info, "
+        "participaiting_role) "
         "VALUES "
-        "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
     insert.bind(1, static_cast<std::int64_t>(message_id));
     insert.bind(2, static_cast<std::int64_t>(channel_id));
@@ -54,6 +56,11 @@ void DB::insert_ctf(const CTF &ctf, dpp::snowflake message_id,
     insert.bind(12, ctf.team.url ? ctf.team.url.value().c_str() : nullptr);
     insert.bind(13, ctf.team.other_info ? ctf.team.other_info.value().c_str()
                                         : nullptr);
+    if (ctf.participaiting_role)
+        insert.bind(14,
+                    static_cast<std::int64_t>(ctf.participaiting_role.value()));
+    else
+        insert.bind(14);
 
     insert.exec();
 }
@@ -85,6 +92,8 @@ CTF get_ctf_from_query(const SQLite::Statement &query)
         ctf.team.url = query.getColumn(11).getString();
     if (query.getColumn(12).isText())
         ctf.team.other_info = query.getColumn(12).getString();
+    if (query.getColumn(13).isInteger())
+        ctf.participaiting_role = query.getColumn(13).getInt64();
 
     return ctf;
 }
@@ -122,38 +131,51 @@ void DB::remove_deleted_ctfs(dpp::cluster &bot) const
     }
 }
 
+void send_starting_notification(dpp::cluster &bot, const CTF &ctf,
+                                const dpp::message &message)
+{
+    constexpr std::string_view message_link_prefix{
+        "https://discord.com/channels/"};
+    auto message_link{std::string{message_link_prefix} +
+                      message.guild_id.str() + '/' + message.channel_id.str() +
+                      '/' + message.id.str()};
+
+    auto notification_embed =
+        dpp::embed()
+            .set_title("**" + ctf.title + "** is starting now!")
+            .set_description("[**Event Details**](" + message_link + ')')
+            .set_color(ctf.to_embed().color);
+
+    auto notification_message =
+        dpp::message(message.channel_id, notification_embed);
+
+    if (ctf.participaiting_role.has_value())
+    {
+        auto role = ctf.participaiting_role.value();
+        notification_message.set_allowed_mentions({}, {}, {}, {}, {}, {role});
+        notification_message.set_content("<@&" + role.str() + ">");
+    }
+
+    bot.message_create(notification_message);
+}
+
 void update_ctf(dpp::cluster &bot, std::int64_t id, std::int64_t channel_id,
                 const CTF &ctf)
 {
-    bot.message_get(
-        id, channel_id,
-        [ctf, &bot](const dpp::confirmation_callback_t &cc)
-        {
-            if (cc.is_error())
-                return;
+    bot.message_get(id, channel_id,
+                    [ctf, &bot](const dpp::confirmation_callback_t &cc)
+                    {
+                        if (cc.is_error())
+                            return;
 
-            auto ctf_embed = ctf.to_embed();
+                        auto message = cc.get<dpp::message>();
+                        message.embeds = {ctf.to_embed()};
 
-            auto message = cc.get<dpp::message>();
-            message.embeds = {ctf_embed};
+                        bot.message_edit(message);
 
-            bot.message_edit(message);
-
-            constexpr std::string_view message_link_prefix{
-                "https://discord.com/channels/"};
-            auto message_link{
-                std::string{message_link_prefix} + message.guild_id.str() +
-                '/' + message.channel_id.str() + '/' + message.id.str()};
-
-            auto notification_embed =
-                dpp::embed()
-                    .set_title("**" + ctf.title + "** is starting now!")
-                    .set_description("[**Event Details**](" + message_link +
-                                     ')')
-                    .set_color(ctf_embed.color);
-            bot.message_create(
-                dpp::message(message.channel_id, notification_embed));
-        });
+                        if (ctf.get_status() == CTF::Status::live)
+                            send_starting_notification(bot, ctf, message);
+                    });
 }
 
 /**
