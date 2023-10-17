@@ -32,7 +32,7 @@ cd flag-catcher
 Then compile using `cmake`
 ```sh
 cmake .
-cmake --build . -j4
+cmake --build .
 ```
 
 You can find the bot binary in `bin/`.
