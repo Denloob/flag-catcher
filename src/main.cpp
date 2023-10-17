@@ -5,7 +5,7 @@
 #include <string_view>
 
 constexpr std::string_view database_file_name{"ctfs.db3"};
-constexpr auto update_interval_sec{1};
+constexpr auto update_interval_sec{10};
 
 std::string get_bot_token()
 {
