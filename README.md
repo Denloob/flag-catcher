@@ -26,7 +26,7 @@
 ### Building from source
 After installing the dependencies, clone the repo and cd into it.
 ```sh
-git clone https://github.com/Denloob/flag-catcher.git
+git clone --recursive https://github.com/Denloob/flag-catcher.git
 cd flag-catcher
 ```
 Then compile using `cmake`
