@@ -86,5 +86,5 @@ That's it!
 
 If you want to add additional info, like who to ping on CTF start, team
 password, team name etc. you can just provide said information using other
-command arguments. Discord will list them all, and you can choose and write in
-any of them.
+command arguments. Discord will list them all. The arguments can be provided in
+any order.
