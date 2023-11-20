@@ -2,6 +2,7 @@
 #include "ctf.hpp"
 #include "db.hpp"
 #include "dpp/dpp.h"
+#include <algorithm>
 #include <string_view>
 
 constexpr std::string_view database_file_name{"ctfs.db3"};
@@ -97,12 +98,9 @@ int main(int argc, char **argv)
                 slash_command::create(event, db);
         });
 
-    bool recreate_commands{};
-    for (int i = 1; i < argc; i++)
-    {
-        if (std::string_view{argv[i]} == "--recreate-commands")
-            recreate_commands = true;
-    }
+    bool recreate_commands{std::any_of(
+        argv + 1, argv + argc,
+        [](std::string_view arg) { return arg == "--recreate-commands"; })};
 
     bot.on_ready(
         [&bot, recreate_commands](const dpp::ready_t &)
