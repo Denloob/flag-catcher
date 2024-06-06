@@ -144,7 +144,7 @@ void send_starting_notification(dpp::cluster &bot, const CTF &ctf,
         dpp::embed()
             .set_title("**" + ctf.title + "** is starting now!")
             .set_description("[**Event Details**](" + message_link + ')')
-            .set_color(ctf.to_embed().color);
+            .set_color(ctf.to_embed().color.value());
 
     auto notification_message =
         dpp::message(message.channel_id, notification_embed);
