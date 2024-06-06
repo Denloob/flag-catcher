@@ -42,8 +42,9 @@ struct CTF
     Status get_status() const;
 };
 
-struct CreationException : public std::runtime_error
+class CreationException : public std::runtime_error
 {
+  public:
     explicit CreationException(const std::string &message);
 };
 } // namespace CTF

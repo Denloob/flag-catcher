@@ -6,8 +6,9 @@
 
 namespace CTF
 {
-struct DB
+class DB
 {
+  public:
     /**
      * @brief Opens a DB with the given file_name.
      *          Creates it if it doesn't exist and creates
