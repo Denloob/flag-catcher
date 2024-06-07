@@ -43,7 +43,7 @@ class DB
      *
      * @param bot The bot (cluster) that sent and that will edit the CTF messages.
      */
-    void update_ctfs(dpp::cluster &bot) const;
+    void update_ctfs(dpp::cluster &bot);
 
     /**
      * @brief Cleans up all the CTFs in the database that no longer needed.
@@ -71,7 +71,7 @@ class DB
      *          Will lead to an SQL injection.
      */
     void update_ctf_type(dpp::cluster &bot, CTF::CTF::Status current_status,
-                         std::string_view field_name) const;
+                         std::string_view field_name);
 
     /**
      * @brief Removes all the finished CTFs from the database.

@@ -159,23 +159,44 @@ void send_starting_notification(dpp::cluster &bot, const CTF &ctf,
     bot.message_create(notification_message);
 }
 
-void update_ctf(dpp::cluster &bot, std::int64_t id, std::int64_t channel_id,
+void update_ctf(SQLite::Database &database, dpp::cluster &bot,
+                std::int64_t message_id, std::int64_t channel_id,
                 const CTF &ctf)
 {
-    bot.message_get(id, channel_id,
-                    [ctf, &bot](const dpp::confirmation_callback_t &cc)
+    bot.message_get(
+        message_id, channel_id,
+        [message_id, ctf, &bot,
+         &database](const dpp::confirmation_callback_t &cc)
+        {
+            if (cc.is_error())
+                return;
+
+            auto message = cc.get<dpp::message>();
+            const CTF::Status ctf_status = ctf.get_status();
+            message.embeds = {ctf.to_embed()};
+
+            bot.message_edit(
+                message,
+                [message_id, ctf_status, &database, &ctf,
+                 &bot](const dpp::confirmation_callback_t &cc)
+                {
+                    if (cc.is_error())
                     {
-                        if (cc.is_error())
-                            return;
+                        return;
+                    }
 
-                        auto message = cc.get<dpp::message>();
-                        message.embeds = {ctf.to_embed()};
+                    SQLite::Statement update(
+                        database,
+                        "UPDATE ctf_data SET status = ? WHERE id = ?");
+                    update.bind(1, static_cast<int>(ctf_status));
+                    update.bind(2, message_id);
+                    update.exec();
 
-                        bot.message_edit(message);
-
-                        if (ctf.get_status() == CTF::Status::live)
-                            send_starting_notification(bot, ctf, message);
-                    });
+                    if (ctf.get_status() == CTF::Status::live)
+                        send_starting_notification(bot, ctf,
+                                                   cc.get<dpp::message>());
+                });
+        });
 }
 
 /**
@@ -183,7 +204,7 @@ void update_ctf(dpp::cluster &bot, std::int64_t id, std::int64_t channel_id,
  *          Will lead to an SQL injection.
  */
 void DB::update_ctf_type(dpp::cluster &bot, CTF::CTF::Status current_status,
-                         std::string_view field_name) const
+                         std::string_view field_name)
 {
     using Status = CTF::CTF::Status;
 
@@ -199,16 +220,8 @@ void DB::update_ctf_type(dpp::cluster &bot, CTF::CTF::Status current_status,
         std::int64_t message_id{query.getColumn(0)};
         std::int64_t channel_id{query.getColumn(1)};
 
-        update_ctf(bot, message_id, channel_id, ctf);
+        update_ctf(this->database, bot, message_id, channel_id, ctf);
     }
-
-    SQLite::Statement update(
-        database, "UPDATE ctf_data SET status = ? WHERE status = ? AND " +
-                      std::string{field_name} + " < ?");
-    update.bind(1, static_cast<int>(current_status) + 1);
-    update.bind(2, static_cast<int>(current_status));
-    update.bind(3, std::time(nullptr));
-    update.exec();
 }
 
 void DB::remove_finished_ctfs() const
@@ -219,7 +232,7 @@ void DB::remove_finished_ctfs() const
     query.exec();
 }
 
-void DB::update_ctfs(dpp::cluster &bot) const
+void DB::update_ctfs(dpp::cluster &bot)
 {
     update_ctf_type(bot, CTF::CTF::Status::soon, "start");
     update_ctf_type(bot, CTF::CTF::Status::live, "finish");
